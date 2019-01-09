@@ -1,0 +1,18 @@
+name: carnd-semantic-segmentation
+channels:
+    - https://conda.anaconda.org/menpo
+    - conda-forge
+dependencies:
+    - python==3.6
+    - keras
+    - numpy
+    - matplotlib
+    - jupyter
+    - pillow
+    - scipy
+    - ffmpeg
+    - imageio==2.1.2
+    - pip:
+        - moviepy
+        - tensorflow-gpu==1.12.0
+
