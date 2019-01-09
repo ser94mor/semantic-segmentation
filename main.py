@@ -100,15 +100,21 @@ def layers(vgg_layer3_out, vgg_layer4_out, vgg_layer7_out, num_classes):
 
 def optimize(nn_last_layer, correct_label, learning_rate, num_classes):
     """
-    Build the TensorFLow loss and optimizer operations.
+    Build the TensorFlow loss and optimizer operations.
     :param nn_last_layer: TF Tensor of the last layer in the neural network
     :param correct_label: TF Placeholder for the correct label image
     :param learning_rate: TF Placeholder for the learning rate
     :param num_classes: Number of classes to classify
     :return: Tuple of (logits, train_op, cross_entropy_loss)
     """
-    # TODO: Implement function
-    return None, None, None
+    # no need to reshape the nn_last_layer to 2d, tf.nn.softmax_cross_entropy_with_logits
+    # accepts tensors of any shape and will apply the softmax function on the last axis of the tensor
+    cross_entropy_loss = tf.reduce_mean(
+        tf.nn.softmax_cross_entropy_with_logits_v2(logits=nn_last_layer, labels=correct_label))
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+    train_op = optimizer.minimize(cross_entropy_loss)
+
+    return nn_last_layer, train_op, cross_entropy_loss
 
 
 def train_nn(sess, epochs, batch_size, get_batches_fn, train_op, cross_entropy_loss, input_image,
@@ -147,7 +153,7 @@ def run():
     tests.test_load_vgg(load_vgg, tf)
     tests.test_layers(layers)
     tests.test_optimize(optimize)
-    #tests.test_train_nn(train_nn)
+    tests.test_train_nn(train_nn)
 
 
     # OPTIONAL: Train and Inference on the cityscapes dataset instead of the Kitti dataset.
@@ -166,6 +172,9 @@ def run():
         # TODO: Build NN using load_vgg, layers, and optimize function
         image_input, keep_prob, layer3_out, layer4_out, layer7_out = load_vgg(sess, vgg_path)
         output_layer = layers(layer3_out, layer4_out, layer7_out, num_classes)
+        correct_label = tf.placeholder(tf.float32, (None, None, None, num_classes))
+        learning_rate = tf.placeholder(tf.float32)
+        logits, train_op, cross_entropy_loss = optimize(output_layer, correct_label, learning_rate, num_classes)
 
         # TODO: Train NN using the train_nn function
 
