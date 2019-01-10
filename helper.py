@@ -163,7 +163,7 @@ def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape)
 
         # Run inference
         im_softmax = sess.run(
-            [tf.nn.softmax(logits)],
+            [tf.nn.softmax(tf.reshape(logits, (-1, 2)))],
             {keep_prob: 1.0, image_pl: [image]})
         # Splice out second column (road), reshape output back to image_shape
         im_softmax = im_softmax[0][:, 1].reshape(image_shape[0], image_shape[1])
