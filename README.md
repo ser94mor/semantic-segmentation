@@ -1,23 +1,26 @@
 ## Semantic Segmentation (Self-Driving Car Engineer Nanodegree)
 In this project, the fully-convolutional neural network (FCN) was trained to perform semantic segmentation tasks.
 The [Kitti Road](http://www.cvlibs.net/datasets/kitti/eval_road.php) dataset was used for training. 
-The output of the FCN has mean IoU (Intersection-over-Union) of 0.827, and 
+The output of the FCN has mean IoU (Intersection-over-Union) of 0.827 on the training data, and 
 the FCN shows fine results on both the test images from Kitti Road dataset as well
-as on videos from the Internet capturing road during similar season of the year. The FCN does not handle shadows
+as on videos from the Internet capturing road during a similar season of the year. The FCN does not handle shadows
 on the images very well, because, as of now, image augmentation has not been performed during training.
+The FCN's architecture is similar to one described in 
+[Long, Jonathan, Evan Shelhamer, and Trevor Darrell. 
+"Fully Convolutional Networks for Semantic Segmentation."](https://arxiv.org/abs/1605.06211) 
 
 #### Demo
 
 ###### Video from the Internet
 ![ANIMATION](readme_images/animation.gif)
 
-###### Kitti Road Test Images (Fine)
+###### Kitti Road Test Images (Best)
 ![GOOD_IMAGE_1](readme_images/good_image_1.png)
 ![GOOD_IMAGE_2](readme_images/good_image_2.png)   
 ![GOOD_IMAGE_3](readme_images/good_image_3.png)
 ![GOOD_IMAGE_4](readme_images/good_image_4.png)
 
-###### Kitti Road Test Images (Poor)
+###### Kitti Road Test Images (Worst)
 ![BAD_IMAGE_1](readme_images/bad_image_1.png)
 ![BAD_IMAGE_2](readme_images/bad_image_2.png)   
 ![BAD_IMAGE_3](readme_images/bad_image_3.png)
@@ -93,7 +96,7 @@ The pre-trained FNC can be downloaded via the following link:
 | Mean IoU Metrics for Training Data                  | 0.8271764607578      |  
 
 The FNC was trained on a machine having GPU: NVIDIA GeForce GTX 1060 Max-Q 6GiB; CPU: Intel Core i7-8750H; RAM: 16 GiB.
-When choosing larger batch size, the training fails because of OOM error.
+When choosing a larger batch size, the training fails because of OOM error.
 
 To run the `python main.py infer ...` command, one first needs to either train the FNC himself 
-or download the pre-trained.
+or download the pre-trained model.
