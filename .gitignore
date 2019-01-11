@@ -101,5 +101,6 @@ ENV/
 .mypy_cache/
 
 RUNS/
-
+models/
+runs/
 .idea/

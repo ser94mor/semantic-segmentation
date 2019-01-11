@@ -1,10 +1,10 @@
-'''
+"""
 You should not edit helper.py as part of your submission.
 
 This file is used primarily to download vgg if it has not yet been,
 give you the progress of the download, get batches for your training,
 as well as around generating and saving the image outputs.
-'''
+"""
 
 import re
 import random
@@ -13,8 +13,7 @@ import os.path
 import scipy.misc
 import shutil
 import zipfile
-import time
-import datetime
+from datetime import datetime
 import urllib.request
 import json
 import tensorflow as tf
@@ -41,38 +40,69 @@ class DLProgress(tqdm):
         self.last_block = block_num
 
 
-def maybe_download_kitti_road_dataset_from_yandex_disk(data_dir):
-    # download Kitti Road dataset if needed from Yandex.Disk
-    kitti_data_dir = os.path.join(data_dir, "data_road")
-    kitti_data_zip = os.path.join(data_dir, "data_road.zip")
-    if not (os.path.isdir(kitti_data_dir)):
-        if not (os.path.exists(kitti_data_zip)):
-            # getting the direct link
-            request_direct_link = \
-                "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={}"\
-                .format("https://yadi.sk/d/-je27MB90LootQ")
-            with urllib.request.urlopen(request_direct_link) as resp:
-                direct_link = json.loads(resp.read().decode('utf-8'))['href']
-
-            # download data
-            print(datetime.datetime.now(), "Started downloading", kitti_data_zip, "file using", direct_link, "link.")
-            with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
-                urllib.request.urlretrieve(direct_link, kitti_data_zip, pbar.hook)
-            print(datetime.datetime.now(), "Finished downloading", kitti_data_zip, "file.")
-
-        print(datetime.datetime.now(), "Started extracting", kitti_data_zip, "file.")
-        with zipfile.ZipFile(kitti_data_zip, 'r') as zip_file:
-            zip_file.extractall(data_dir)
-        print(datetime.datetime.now(), "Finished extracting", kitti_data_zip, "file.")
+def retrieve_direct_yandex_disk_url(url):
+    """
+    The links Yandex.Disk provides after file sharing are not direct. To obtain a direct link, a special procedure
+    should be performed.
+    :param url: public non-direct link to file
+    :return: the direct link to file
+    """
+    # getting the direct link
+    request_direct_link = \
+        "https://cloud-api.yandex.net/v1/disk/public/resources/download?public_key={}" \
+        .format(url)
+    with urllib.request.urlopen(request_direct_link) as resp:
+        direct_link = json.loads(resp.read().decode('utf-8'))['href']
+    return direct_link
 
 
-def maybe_download_pretrained_vgg(data_dir):
+def download_file(direct_url, file):
+    """
+    Downloads files.
+    :param direct_url: direct link to file to download.
+    :param file: file name in the local file system
+    """
+    print(datetime.now(),
+          "Started downloading", file, "file using", direct_url, "link.")
+    with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
+        urllib.request.urlretrieve(direct_url, file, pbar.hook)
+    print(datetime.now(), "Finished downloading", file, "file.")
+
+
+def extract_zip_archive(archive, directory):
+    """
+    Extracts ZIP archive.
+    :param archive: archive path in the local file system
+    :param directory: directory into which extract the archive
+    """
+    print(datetime.now(), "Started extracting", archive, "file.")
+    with zipfile.ZipFile(archive, 'r') as zip_file:
+        zip_file.extractall(directory)
+    print(datetime.now(), "Finished extracting", archive, "file.")
+
+
+def maybe_download_dataset_from_yandex_disk(dataset):
+    """
+    Downloads the selected dataset from Yandex.Disk.
+    :param dataset: Dataset object
+    """
+    # download dataset if needed from Yandex.Disk
+    if not (os.path.isdir(dataset.data_dir)):
+        direct_link = retrieve_direct_yandex_disk_url(dataset.yandex_disk_url)
+        download_file(direct_link, dataset.archive_path)
+        extract_zip_archive(dataset.archive_path, dataset.data_root_dir)
+        # Remove zip file to save space
+        os.remove(dataset.archive_path)
+
+
+def maybe_download_pretrained_vgg_from_yandex_disk(data_dir):
     """
     Download and extract pretrained vgg model if it doesn't exist
     :param data_dir: Directory to download the model to
     """
-    vgg_filename = 'vgg.zip'
+    yandex_disk_url = "https://yadi.sk/d/aTzGJtuzdtYE3Q"
     vgg_path = os.path.join(data_dir, 'vgg')
+    vgg_filename = os.path.join(data_dir, 'vgg.zip')
     vgg_files = [
         os.path.join(vgg_path, 'variables/variables.data-00000-of-00001'),
         os.path.join(vgg_path, 'variables/variables.index'),
@@ -83,24 +113,12 @@ def maybe_download_pretrained_vgg(data_dir):
         # Clean vgg dir
         if os.path.exists(vgg_path):
             shutil.rmtree(vgg_path)
-        os.makedirs(vgg_path)
 
-        # Download vgg
-        print('Downloading pre-trained vgg model...')
-        with DLProgress(unit='B', unit_scale=True, miniters=1) as pbar:
-            urllib.request.urlretrieve(
-                "https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/vgg.zip",
-                os.path.join(vgg_path, vgg_filename),
-                pbar.hook)
-
-        # Extract vgg
-        print('Extracting model...')
-        zip_ref = zipfile.ZipFile(os.path.join(vgg_path, vgg_filename), 'r')
-        zip_ref.extractall(data_dir)
-        zip_ref.close()
-
+        direct_link = retrieve_direct_yandex_disk_url(yandex_disk_url)
+        download_file(direct_link, vgg_filename)
+        extract_zip_archive(vgg_filename, data_dir)
         # Remove zip file to save space
-        os.remove(os.path.join(vgg_path, vgg_filename))
+        os.remove(vgg_filename)
 
 
 def gen_batch_function(data_folder, image_shape):
@@ -145,59 +163,3 @@ def gen_batch_function(data_folder, image_shape):
 
             yield np.array(images), np.array(gt_images)
     return get_batches_fn
-
-
-def gen_test_output(sess, logits, keep_prob, image_pl, data_folder, image_shape):
-    """
-    Generate test output using the test images
-    :param sess: TF session
-    :param logits: TF Tensor for the logits
-    :param keep_prob: TF Placeholder for the dropout keep probability
-    :param image_pl: TF Placeholder for the image placeholder
-    :param data_folder: Path to the folder that contains the datasets
-    :param image_shape: Tuple - Shape of image
-    :return: Output for for each test image
-    """
-    for image_file in glob(os.path.join(data_folder, 'image_2', '*.png')):
-        image = scipy.misc.imresize(scipy.misc.imread(image_file), image_shape)
-
-        # Run inference
-        im_softmax = sess.run(
-            [tf.nn.softmax(tf.reshape(logits, (-1, 2)))],
-            {keep_prob: 1.0, image_pl: [image]})
-        # Splice out second column (road), reshape output back to image_shape
-        im_softmax = im_softmax[0][:, 1].reshape(image_shape[0], image_shape[1])
-        # If road softmax > 0.5, prediction is road
-        segmentation = (im_softmax > 0.5).reshape(image_shape[0], image_shape[1], 1)
-        # Create mask based on segmentation to apply to original image
-        mask = np.dot(segmentation, np.array([[0, 255, 0, 127]]))
-        mask = scipy.misc.toimage(mask, mode="RGBA")
-        street_im = scipy.misc.toimage(image)
-        street_im.paste(mask, box=None, mask=mask)
-
-        yield os.path.basename(image_file), np.array(street_im)
-
-
-def save_inference_samples(runs_dir, data_dir, sess, image_shape, logits, keep_prob, input_image):
-    """
-    Save test images with semantic masks of lane predictions to runs_dir.
-    :param runs_dir: Directory to save output images
-    :param data_dir: Path to the directory that contains the datasets
-    :param sess: TF session
-    :param image_shape: Tuple - Shape of image
-    :param logits: TF Tensor for the logits
-    :param keep_prob: TF Placeholder for the dropout keep probability
-    :param input_image: TF Placeholder for the image placeholder
-    """
-    # Make folder for current run
-    output_dir = os.path.join(runs_dir, str(time.time()))
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-    os.makedirs(output_dir)
-
-    # Run NN on test images and save them to HD
-    print('Training Finished. Saving test images to: {}'.format(output_dir))
-    image_outputs = gen_test_output(
-        sess, logits, keep_prob, input_image, os.path.join(data_dir, 'data_road/testing'), image_shape)
-    for name, image in image_outputs:
-        scipy.misc.imsave(os.path.join(output_dir, name), image)

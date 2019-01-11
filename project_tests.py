@@ -1,8 +1,8 @@
-'''
+"""
 You should not edit project_tests.py as part of your submission.
 
 This file is used for unit testing your work within main.py.
-'''
+"""
 
 import sys
 import os
@@ -129,49 +129,64 @@ def test_optimize(optimize):
     layers_output = tf.Variable(tf.zeros(shape))
     correct_label = tf.placeholder(tf.float32, [None, None, None, num_classes])
     learning_rate = tf.placeholder(tf.float32)
-    logits, train_op, cross_entropy_loss = optimize(layers_output, correct_label, learning_rate, num_classes)
+    logits, train_op, cross_entropy_loss, softmax = optimize(layers_output, correct_label, learning_rate, num_classes)
 
     _assert_tensor_shape(logits, shape, 'Logits')
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         sess.run([train_op], {correct_label: np.arange(np.prod(shape)).reshape(shape), learning_rate: 10})
-        test, loss = sess.run([layers_output, cross_entropy_loss], {correct_label: np.arange(np.prod(shape)).reshape(shape)})
+        test, loss = sess.run([layers_output, cross_entropy_loss],
+                              {correct_label: np.arange(np.prod(shape)).reshape(shape)})
 
     assert test.min() != 0 or test.max() != 0, 'Training operation not changing weights.'
 
 
 @test_safe
-def test_train_nn(train_nn):
+def test_train_nn(train_nn, dataset):
     """
     Test whether the `train_nn()` function correctly begins training a neural network on simple data.
     :param train_nn: An implemented `train_nn()` function.
+    :param dataset: Dataset object
     """
     epochs = 1
     batch_size = 2
+    save_model_freq = 10000000
+    learning_rate = 0.1
+    keep_prob = 0.5
 
     def get_batches_fn(batch_size_param):
         shape = [batch_size_param, 2, 3, 3]
         return np.arange(np.prod(shape)).reshape(shape)
 
-    train_op = tf.constant(0)
-    cross_entropy_loss = tf.constant(10.11)
-    input_image = tf.placeholder(tf.float32, name='input_image')
-    correct_label = tf.placeholder(tf.float32, name='correct_label')
-    keep_prob = tf.placeholder(tf.float32, name='keep_prob')
-    learning_rate = tf.placeholder(tf.float32, name='learning_rate')
+    train_op_tensor = tf.constant(0)
+    cross_entropy_loss_tensor = tf.constant(10.11)
+    input_image_tensor = tf.placeholder(tf.float32, name='input_image')
+    correct_label_tensor = tf.placeholder(tf.float32, name='correct_label')
+    keep_prob_tensor = tf.placeholder(tf.float32, name='keep_prob')
+    learning_rate_tensor = tf.placeholder(tf.float32, name='learning_rate')
+    iou_tensor = tf.constant(3)
+    iou_op_tensor = tf.constant(0)
+
     with tf.Session() as sess:
         parameters = {
             'sess': sess,
+            'dataset': dataset,
             'epochs': epochs,
+            'save_model_freq': save_model_freq,
             'batch_size': batch_size,
-            'get_batches_fn': get_batches_fn,
-            'train_op': train_op,
-            'cross_entropy_loss': cross_entropy_loss,
-            'input_image': input_image,
-            'correct_label': correct_label,
+            'learning_rate': learning_rate,
             'keep_prob': keep_prob,
-            'learning_rate': learning_rate}
+            'get_batches_fn': get_batches_fn,
+            'train_op_tensor': train_op_tensor,
+            'cross_entropy_loss_tensor': cross_entropy_loss_tensor,
+            'input_image_tensor': input_image_tensor,
+            'correct_label_tensor': correct_label_tensor,
+            'keep_prob_tensor': keep_prob_tensor,
+            'learning_rate_tensor': learning_rate_tensor,
+            'iou_tensor': iou_tensor,
+            'iou_op_tensor': iou_op_tensor,
+        }
         _prevent_print(train_nn, parameters)
 
 
