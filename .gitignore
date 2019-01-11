@@ -100,4 +100,8 @@ ENV/
 # mypy
 .mypy_cache/
 
+data/
 RUNS/
+models/
+runs/
+.idea/
