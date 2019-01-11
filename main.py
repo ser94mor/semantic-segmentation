@@ -298,6 +298,9 @@ def train(epochs: int = None, save_model_freq: int = None, batch_size: int = Non
 
     dataset = DATASETS[dataset]
 
+    if not os.path.exists(dataset.data_root_dir):
+        os.makedirs(dataset.data_root_dir)
+
     # Download Kitti Road dataset
     helper.maybe_download_dataset_from_yandex_disk(dataset)
 
